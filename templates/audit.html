@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs & Triggers — CampusHire{% endblock %}
+{% block page_title %}Audit Trail & Trigger Execution Log{% endblock %}
+{% block page_subtitle %}Live audit table populated automatically by database Triggers and DML mutations{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card-custom h-100">
+            <div class="card-custom-body py-3 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-bolt text-warning me-2"></i>Automated Triggers Implemented:</h6>
+                    <ul class="text-secondary small mb-0 ps-3">
+                        <li><code>trg_after_application_insert</code>: Inserts audit log upon student application submission.</li>
+                        <li><code>trg_after_offer_update</code>: Auto-updates application to <code>SELECTED</code> when offer is accepted and logs event.</li>
+                        <li><code>trg_before_application_insert_check</code>: Validates drive status is <code>OPEN</code> and deadline not expired.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card-custom h-100">
+            <div class="card-custom-body py-3 text-center">
+                <span class="metric-label">Total Logged Events</span>
+                <div class="metric-value text-primary">{{ logs|length }}</div>
+                <small class="text-muted font-mono">Immutable audit records</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <h5>
+            <i class="fa-solid fa-list-check text-primary"></i>
+            Chronological Audit Events (Table: audit_logs)
+        </h5>
+        <span class="badge bg-light text-secondary border font-mono small">ORDER BY audit_id DESC</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>Triggered By</th>
+                    <th>Event Details & Audit Message</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td><span class="badge bg-light text-secondary border font-mono">#{{ log.audit_id }}</span></td>
+                    <td>
+                        <span class="badge {% if 'TRIGGER' in log.action or 'ACCEPTED' in log.action %}bg-success{% elif 'DELETE' in log.action %}bg-danger{% elif 'CREATE' in log.action or 'POST' in log.action %}bg-primary{% else %}bg-dark{% endif %} font-mono">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ log.entity_type }}</span></td>
+                    <td class="font-mono small">
+                        {% if log.entity_id %}#{{ log.entity_id }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td>
+                        <span class="small fw-semibold">{{ log.user_name or 'System / Anonymous' }}</span>
+                    </td>
+                    <td class="small text-secondary" style="max-width: 350px;">
+                        {{ log.details }}
+                    </td>
+                    <td class="small text-muted font-mono">
+                        {{ log.created_at }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        No audit events recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

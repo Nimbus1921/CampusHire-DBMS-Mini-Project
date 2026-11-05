@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CampusHire — College Placement & Recruitment Management System{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for Interactive Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --secondary: #0ea5e9;
+            --accent: #10b981;
+            --bg-main: #f8fafc;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #94a3b8;
+            --card-border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .app-sidebar {
+            width: 270px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            border-right: 1px solid #1e293b;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .sidebar-brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        .sidebar-brand-text h4 {
+            color: #fff;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-brand-text span {
+            font-size: 0.72rem;
+            color: #38bdf8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .sidebar-nav {
+            padding: 20px 12px;
+            flex-grow: 1;
+        }
+
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: 700;
+            padding: 10px 14px 4px 14px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 3px;
+        }
+
+        .sidebar-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-link.active {
+            color: #fff;
+            background-color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+        }
+
+        .sidebar-link i {
+            font-size: 1.05rem;
+            width: 22px;
+            text-align: center;
+        }
+
+        .badge-pill {
+            margin-left: auto;
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background-color: #334155;
+            color: #f1f5f9;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #1e293b;
+            background-color: #0b1120;
+        }
+
+        /* Main Content */
+        .app-main {
+            flex-grow: 1;
+            margin-left: 270px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .app-topbar {
+            height: 70px;
+            background-color: #fff;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+        }
+
+        .topbar-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .app-content {
+            padding: 32px;
+            flex-grow: 1;
+        }
+
+        /* Cards */
+        .metric-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            padding: 22px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+        }
+
+        .metric-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-top: 10px;
+        }
+
+        .metric-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-custom {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-custom-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+        }
+
+        .card-custom-header h5 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-custom-body {
+            padding: 24px;
+        }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Tables */
+        .table-custom {
+            margin: 0;
+            width: 100%;
+        }
+
+        .table-custom th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-top: none;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 16px;
+        }
+
+        .table-custom td {
+            padding: 14px 16px;
+            vertical-align: middle;
+            color: #1e293b;
+            font-size: 0.88rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-custom tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .status-placed, .status-passed, .status-accepted, .status-verified, .status-open {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-unplaced, .status-failed, .status-declined, .status-suspended, .status-closed {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .status-offer_received, .status-shortlisted, .status-pending {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-applied, .status-draft {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        /* Code & Monospace */
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Modal styling */
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 20px 24px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #f1f5f9;
+            padding: 16px 24px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div class="sidebar-brand-text">
+                <h4>CampusHire</h4>
+                <span>DBMS Mini Project</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Overview</div>
+            <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard & Analytics</span>
+            </a>
+
+            <div class="nav-section-title">Data Manipulation (CRUD)</div>
+            <a href="{{ url_for('students') }}" class="sidebar-link {% if request.endpoint == 'students' %}active{% endif %}">
+                <i class="fa-solid fa-user-graduate"></i>
+                <span>Students</span>
+                <span class="badge-pill">{{ nav_total_students }}</span>
+            </a>
+            <a href="{{ url_for('jobs') }}" class="sidebar-link {% if request.endpoint == 'jobs' %}active{% endif %}">
+                <i class="fa-solid fa-briefcase"></i>
+                <span>Companies & Drives</span>
+                <span class="badge-pill">{{ nav_open_jobs }} Open</span>
+            </a>
+            <a href="{{ url_for('applications') }}" class="sidebar-link {% if request.endpoint == 'applications' %}active{% endif %}">
+                <i class="fa-solid fa-file-signature"></i>
+                <span>Applications</span>
+            </a>
+            <a href="{{ url_for('interviews') }}" class="sidebar-link {% if request.endpoint == 'interviews' %}active{% endif %}">
+                <i class="fa-solid fa-clipboard-check"></i>
+                <span>Interview Rounds</span>
+            </a>
+            <a href="{{ url_for('offers') }}" class="sidebar-link {% if request.endpoint == 'offers' %}active{% endif %}">
+                <i class="fa-solid fa-award"></i>
+                <span>Placement Offers</span>
+                <span class="badge-pill bg-success text-white">{{ nav_placed_students }}</span>
+            </a>
+            <a href="{{ url_for('departments_view') }}" class="sidebar-link {% if request.endpoint == 'departments_view' %}active{% endif %}">
+                <i class="fa-solid fa-building-columns"></i>
+                <span>Departments</span>
+            </a>
+
+            <div class="nav-section-title">DBMS Concepts & PL/SQL</div>
+            <a href="{{ url_for('procedures') }}" class="sidebar-link {% if request.endpoint == 'procedures' %}active{% endif %}">
+                <i class="fa-solid fa-code-fork"></i>
+                <span>Procedures & Cursors</span>
+            </a>
+            <a href="{{ url_for('sql_terminal') }}" class="sidebar-link {% if request.endpoint == 'sql_terminal' %}active{% endif %}">
+                <i class="fa-solid fa-terminal"></i>
+                <span>SQL Query Terminal</span>
+            </a>
+            <a href="{{ url_for('audit_logs') }}" class="sidebar-link {% if request.endpoint == 'audit_logs' %}active{% endif %}">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Audit Logs & Triggers</span>
+            </a>
+            <a href="{{ url_for('schema') }}" class="sidebar-link {% if request.endpoint == 'schema' %}active{% endif %}">
+                <i class="fa-solid fa-diagram-project"></i>
+                <span>ER Diagram & 3NF Schema</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center justify-content-between text-white-50 small mb-2">
+                <span>Placement Rate:</span>
+                <span class="text-success fw-bold">{{ nav_placement_rate }}%</span>
+            </div>
+            <form action="{{ url_for('reset_database') }}" method="POST" onsubmit="return confirm('Reset database back to default sample dataset?');">
+                <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-light py-1" style="font-size: 0.76rem; border-color: #334155;">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Reset Sample Data
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+        <!-- Topbar -->
+        <header class="app-topbar">
+            <div class="topbar-title">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p>{% block page_subtitle %}Campus Recruitment & Placement System (MySQL / 3NF Normalized){% endblock %}</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-pill border">
+                    <span class="badge bg-success rounded-circle p-1" style="width: 8px; height: 8px; display: inline-block;"></span>
+                    <span class="small fw-semibold text-secondary">Database: Active (3NF / 11 Tables)</span>
+                </div>
+                <a href="{{ url_for('sql_terminal') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-terminal me-1"></i> Run SQL
+                </a>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        <div class="px-4 pt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                            <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Dynamic Body Content -->
+        <div class="app-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Auto-dismiss alerts smoothly after 4.5 seconds
+setTimeout(() => {
+    document.querySelectorAll('.alert-dismissible').forEach(el => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+        if (bsAlert) bsAlert.close();
+    });
+}, 4500);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

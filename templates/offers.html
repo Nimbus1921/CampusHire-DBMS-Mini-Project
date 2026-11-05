@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Offers — CampusHire{% endblock %}
+{% block page_title %}Placement Offers & Rollouts{% endblock %}
+{% block page_subtitle %}Manage job offers and experience automated Cascading Database Triggers{% endblock %}
+
+{% block content %}
+<!-- Trigger Highlight Box -->
+<div class="card-custom bg-white border border-success mb-4" style="border-left: 5px solid #10b981 !important;">
+    <div class="card-custom-body py-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h6 class="fw-bold text-success mb-1">
+                    <i class="fa-solid fa-bolt-lightning me-1"></i> Interactive Trigger Demonstration:
+                </h6>
+                <p class="text-secondary small mb-0">
+                    When you change any offer status to <span class="badge bg-success font-mono">ACCEPTED</span>, 
+                    the database trigger <code class="font-mono bg-light px-2 py-1 rounded text-primary">trg_after_offer_update</code> 
+                    automatically updates the student's application status to <span class="badge bg-primary font-mono">SELECTED</span> 
+                    and logs a secure entry into <span class="badge bg-dark font-mono">audit_logs</span>!
+                </p>
+            </div>
+            <a href="{{ url_for('audit_logs') }}" class="btn btn-sm btn-outline-success">
+                <i class="fa-solid fa-list-check me-1"></i> View Live Trigger Audit Log
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <h5>
+            <i class="fa-solid fa-award text-warning"></i>
+            All Placement Offers (Total: {{ offers|length }})
+        </h5>
+        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newOfferModal">
+            <i class="fa-solid fa-plus me-1"></i> Roll Out Placement Offer
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Offer ID</th>
+                    <th>Candidate</th>
+                    <th>Company & Job Title</th>
+                    <th>Package (LPA)</th>
+                    <th>Offer Date</th>
+                    <th>Joining Date</th>
+                    <th>Offer Status</th>
+                    <th class="text-end">Update Offer Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in offers %}
+                <tr>
+                    <td><span class="badge bg-light text-secondary border font-mono">#OFF-{{ o.offer_id }}</span></td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ o.student_name }}</div>
+                        <div class="text-muted small font-mono">{{ o.enrollment_number }} &bull; {{ o.department_code }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ o.company_name }}</div>
+                        <div class="text-muted small">{{ o.job_title }}</div>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-success fs-6">₹{{ o.offered_package_lpa }} LPA</span>
+                    </td>
+                    <td class="small text-muted">{{ o.offer_date }}</td>
+                    <td class="small text-muted">{{ o.joining_date or 'TBD' }}</td>
+                    <td>
+                        <span class="status-badge status-{{ o.offer_status|lower }}">{{ o.offer_status }}</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <form action="{{ url_for('update_offer_status', offer_id=o.offer_id) }}" method="POST" class="d-inline">
+                                <select name="offer_status" class="form-select form-select-sm" style="width: 140px;" onchange="this.form.submit()">
+                                    <option value="OFFERED" {% if o.offer_status == 'OFFERED' %}selected{% endif %}>OFFERED</option>
+                                    <option value="ACCEPTED" {% if o.offer_status == 'ACCEPTED' %}selected{% endif %}>ACCEPTED (Trigger)</option>
+                                    <option value="DECLINED" {% if o.offer_status == 'DECLINED' %}selected{% endif %}>DECLINED</option>
+                                    <option value="WITHDRAWN" {% if o.offer_status == 'WITHDRAWN' %}selected{% endif %}>WITHDRAWN</option>
+                                </select>
+                            </form>
+                            <form action="{{ url_for('delete_offer', offer_id=o.offer_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete Offer #{{ o.offer_id }}?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Offer">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ROLL OUT OFFER -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="newOfferModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('create_offer') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-gift text-primary me-2"></i>Roll Out Placement Offer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Candidate Application *</label>
+                        <select name="application_id" class="form-select" required>
+                            <option value="">-- Choose Candidate --</option>
+                            {% for a in applications %}
+                            <option value="{{ a.application_id }}">
+                                {{ a.full_name }} - {{ a.company_name }} ({{ a.job_title }}) [Base: ₹{{ a.package_lpa }} LPA]
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Offered Package (LPA in ₹) *</label>
+                            <input type="number" step="0.1" name="offered_package_lpa" class="form-control" required placeholder="e.g. 14.50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Offer Date *</label>
+                            <input type="date" name="offer_date" class="form-control" required value="2026-10-15">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Expected Joining Date</label>
+                            <input type="date" name="joining_date" class="form-control" value="2027-07-01">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Issue Offer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

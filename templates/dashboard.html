@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard & Placement Analytics — CampusHire{% endblock %}
+{% block page_title %}Placement Analytics & Overview{% endblock %}
+{% block page_subtitle %}Real-time DBMS metrics computed via Views, Stored Functions & Triggers{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="metric-label">Overall Placement %</span>
+                <div class="metric-value text-primary">{{ nav_placement_rate }}%</div>
+                <small class="text-muted"><i class="fa-solid fa-calculator text-primary me-1"></i>fn_calculate_overall_percentage</small>
+            </div>
+            <div class="metric-icon bg-primary bg-opacity-10 text-primary">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="metric-label">Students Placed</span>
+                <div class="metric-value text-success">{{ nav_placed_students }} <span class="fs-6 fw-normal text-muted">/ {{ nav_total_students }}</span></div>
+                <small class="text-success"><i class="fa-solid fa-circle-check me-1"></i>Active Offers Accepted</small>
+            </div>
+            <div class="metric-icon bg-success bg-opacity-10 text-success">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="metric-label">Highest Package</span>
+                <div class="metric-value text-warning">₹{{ "%.2f"|format(max_package) }} <span class="fs-6 fw-normal text-muted">LPA</span></div>
+                <small class="text-muted"><i class="fa-solid fa-building me-1"></i>Google India</small>
+            </div>
+            <div class="metric-icon bg-warning bg-opacity-10 text-warning">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="metric-label">Average Package</span>
+                <div class="metric-value text-info">₹{{ "%.2f"|format(avg_package) }} <span class="fs-6 fw-normal text-muted">LPA</span></div>
+                <small class="text-muted"><i class="fa-solid fa-scale-balanced me-1"></i>Across All Departments</small>
+            </div>
+            <div class="metric-icon bg-info bg-opacity-10 text-info">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Banner -->
+<div class="card-custom bg-white border mb-4">
+    <div class="card-custom-body py-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="fw-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Quick Data Manipulation Actions:</h6>
+                <p class="text-muted small mb-0">Directly perform DML operations (INSERT, UPDATE, DELETE) across all 3NF tables.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('students') }}" class="btn btn-sm btn-primary-custom">
+                    <i class="fa-solid fa-user-plus me-1"></i> Add Student
+                </a>
+                <a href="{{ url_for('jobs') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-plus me-1"></i> Post Job Drive
+                </a>
+                <a href="{{ url_for('applications') }}" class="btn btn-sm btn-outline-success">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Submit Application
+                </a>
+                <a href="{{ url_for('offers') }}" class="btn btn-sm btn-outline-warning">
+                    <i class="fa-solid fa-award me-1"></i> Roll Out Offer
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Visual Analytics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-chart-column text-primary"></i>
+                    Department Placement Rate (%) & Average Package (LPA)
+                </h5>
+                <span class="badge bg-light text-primary border font-mono small">Live Chart.js</span>
+            </div>
+            <div class="card-custom-body">
+                <canvas id="deptChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-chart-pie text-secondary"></i>
+                    Placement Distribution
+                </h5>
+                <span class="badge bg-light text-secondary border font-mono small">Live Ratio</span>
+            </div>
+            <div class="card-custom-body d-flex align-items-center justify-content-center">
+                <div style="width: 230px; height: 230px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Department Statistics (View: v_department_placement_statistics) -->
+    <div class="col-lg-7">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-building-columns text-primary"></i>
+                    Department Placement Statistics
+                </h5>
+                <span class="badge bg-light text-primary border font-mono small">VIEW: v_department_placement_statistics</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Total Students</th>
+                            <th>Placed</th>
+                            <th>Placement %</th>
+                            <th>Highest LPA</th>
+                            <th>Avg LPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in dept_stats %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-dark">{{ dept.department_code }}</span>
+                                <div class="text-muted small">{{ dept.department_name }}</div>
+                            </td>
+                            <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ dept.total_students }}</span></td>
+                            <td><span class="badge bg-success bg-opacity-10 text-success fw-bold">{{ dept.placed_students }}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ dept.placement_percentage or 0 }}%"></div>
+                                    </div>
+                                    <span class="fw-bold small">{{ dept.placement_percentage or 0.0 }}%</span>
+                                </div>
+                            </td>
+                            <td class="fw-bold text-success">₹{{ dept.highest_package_lpa }} LPA</td>
+                            <td class="text-muted">₹{{ dept.average_package_lpa }} LPA</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Recruitment Drives (View: v_job_opening_company_summary) -->
+    <div class="col-lg-5">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-briefcase text-secondary"></i>
+                    Open Recruitment Drives
+                </h5>
+                <a href="{{ url_for('jobs') }}" class="btn btn-link btn-sm text-decoration-none">View All</a>
+            </div>
+            <div class="card-custom-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for job in open_drives %}
+                    <div class="list-group-item p-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold text-dark">{{ job.job_title }}</span>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold">₹{{ job.package_lpa }} LPA</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between text-muted small">
+                            <span><i class="fa-solid fa-building me-1"></i>{{ job.company_name }}</span>
+                            <span><i class="fa-solid fa-location-dot me-1"></i>{{ job.location }}</span>
+                        </div>
+                        <div class="mt-2 d-flex align-items-center justify-content-between">
+                            <span class="small text-secondary">
+                                Min CGPA: <strong>{{ job.minimum_cgpa }}</strong> | Backlogs &le; <strong>{{ job.maximum_backlogs }}</strong>
+                            </span>
+                            <span class="badge bg-light text-secondary border font-mono small">{{ job.total_applicants }} Applicants</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Offers Rolled Out -->
+    <div class="col-lg-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-award text-warning"></i>
+                    Recent Placement Offers
+                </h5>
+                <a href="{{ url_for('offers') }}" class="btn btn-link btn-sm text-decoration-none">Manage Offers</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Company & Role</th>
+                            <th>Package</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offer in recent_offers %}
+                        <tr>
+                            <td class="fw-semibold">{{ offer.student_name }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ offer.company_name }}</div>
+                                <div class="text-muted small">{{ offer.job_title }}</div>
+                            </td>
+                            <td class="fw-bold text-success">₹{{ offer.offered_package_lpa }} LPA</td>
+                            <td>
+                                <span class="status-badge status-{{ offer.offer_status|lower }}">
+                                    {{ offer.offer_status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Audit Logs & Trigger Events -->
+    <div class="col-lg-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <h5>
+                    <i class="fa-solid fa-bolt text-danger"></i>
+                    Audit Trail & Live Trigger Events
+                </h5>
+                <a href="{{ url_for('audit_logs') }}" class="btn btn-link btn-sm text-decoration-none">All Logs</a>
+            </div>
+            <div class="card-custom-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for log in recent_logs %}
+                    <div class="list-group-item p-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="badge bg-dark font-mono">{{ log.action }}</span>
+                            <small class="text-muted">{{ log.created_at }}</small>
+                        </div>
+                        <p class="small text-secondary mb-0 mt-1">{{ log.details }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/analytics/charts')
+        .then(res => res.json())
+        .then(data => {
+            // 1. Department Placement & Package Bar Chart
+            const ctxDept = document.getElementById('deptChart');
+            if (ctxDept) {
+                new Chart(ctxDept, {
+                    type: 'bar',
+                    data: {
+                        labels: data.departments.labels,
+                        datasets: [
+                            {
+                                label: 'Placement %',
+                                data: data.departments.percentages,
+                                backgroundColor: 'rgba(79, 70, 229, 0.85)',
+                                borderColor: '#4f46e5',
+                                borderWidth: 1,
+                                borderRadius: 6,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Avg Package (₹ LPA)',
+                                data: data.departments.avg_packages,
+                                backgroundColor: 'rgba(14, 165, 233, 0.85)',
+                                borderColor: '#0ea5e9',
+                                borderWidth: 1,
+                                borderRadius: 6,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', weight: 600 } } }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                max: 100,
+                                title: { display: true, text: 'Placement Rate (%)' },
+                                grid: { color: '#f1f5f9' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Avg Package (LPA)' },
+                                grid: { drawOnChartArea: false }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Status Doughnut Chart
+            const ctxStatus = document.getElementById('statusChart');
+            if (ctxStatus) {
+                const s = data.status_distribution;
+                new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Placed', 'Offer Received', 'Unplaced'],
+                        datasets: [{
+                            data: [s['PLACED'] || 0, s['OFFER_RECEIVED'] || 0, s['UNPLACED'] || 0],
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+        });
+});
+</script>
+{% endblock %}

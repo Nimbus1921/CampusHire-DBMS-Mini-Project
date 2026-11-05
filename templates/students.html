@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Students Management — CampusHire{% endblock %}
+{% block page_title %}Students Management{% endblock %}
+{% block page_subtitle %}Full CRUD Data Manipulation for Students with 3NF Relational Constraints{% endblock %}
+
+{% block content %}
+<div class="card-custom">
+    <!-- Header with Search, Filters & Add Button -->
+    <div class="card-custom-header flex-wrap gap-3">
+        <form class="d-flex flex-wrap align-items-center gap-2" method="GET" action="{{ url_for('students') }}">
+            <!-- Search -->
+            <div class="input-group input-group-sm" style="width: 240px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search name, enrollment..." value="{{ search }}">
+            </div>
+
+            <!-- Dept Filter -->
+            <select name="dept" class="form-select form-select-sm" style="width: 140px;" onchange="this.form.submit()">
+                <option value="">All Depts</option>
+                {% for d in departments %}
+                <option value="{{ d.department_code }}" {% if dept_filter == d.department_code %}selected{% endif %}>{{ d.department_code }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Status Filter -->
+            <select name="status" class="form-select form-select-sm" style="width: 150px;" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                <option value="PLACED" {% if status_filter == 'PLACED' %}selected{% endif %}>Placed</option>
+                <option value="OFFER_RECEIVED" {% if status_filter == 'OFFER_RECEIVED' %}selected{% endif %}>Offer Received</option>
+                <option value="UNPLACED" {% if status_filter == 'UNPLACED' %}selected{% endif %}>Unplaced</option>
+            </select>
+
+            {% if dept_filter or status_filter or search %}
+            <a href="{{ url_for('students') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+            {% endif %}
+        </form>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- Export CSV Button -->
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="exportStudentsToCSV()">
+                <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+            </button>
+            <!-- Add Student Button -->
+            <button type="button" class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="fa-solid fa-user-plus me-1"></i> Add New Student
+            </button>
+        </div>
+    </div>
+
+    <!-- Table of Students -->
+    <div class="table-responsive">
+        <table id="studentsTable" class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Enrollment & Name</th>
+                    <th>Dept</th>
+                    <th>CGPA</th>
+                    <th>Backlogs</th>
+                    <th>Applications</th>
+                    <th>Interviews</th>
+                    <th>Placement Status</th>
+                    <th>Accepted Package</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ s.student_name }}</div>
+                        <div class="text-muted small font-mono">{{ s.enrollment_number }} &bull; {{ s.email }}</div>
+                    </td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary fw-semibold">{{ s.department_code }}</span></td>
+                    <td>
+                        <span class="fw-bold {% if s.cgpa >= 8.5 %}text-success{% elif s.cgpa >= 7.0 %}text-primary{% else %}text-warning{% endif %}">
+                            {{ "%.2f"|format(s.cgpa) }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if s.active_backlogs == 0 %}
+                            <span class="badge bg-success bg-opacity-10 text-success">0</span>
+                        {% else %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger fw-bold">{{ s.active_backlogs }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-mono">{{ s.total_applications }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-mono">{{ s.total_interviews_scheduled }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ s.placement_status|lower }}">
+                            {{ s.placement_status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if s.accepted_package_lpa > 0 %}
+                            <span class="fw-bold text-success">₹{{ s.accepted_package_lpa }} LPA</span>
+                        {% else %}
+                            <span class="text-muted small">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info" title="View Profile & Drives" onclick="viewStudentDetails({{ s.student_id }})">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" title="Edit Student" onclick="openEditStudentModal({{ s.student_id }}, '{{ s.student_name }}', {{ s.cgpa }}, {{ s.active_backlogs }})">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <form action="{{ url_for('delete_student', student_id=s.student_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete student {{ s.student_name }} ({{ s.enrollment_number }})? This will also remove applications and offers.');">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete Student">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-user-slash fs-2 d-block mb-2 text-secondary"></i>
+                        No students found matching your criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ADD STUDENT -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('create_student') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus text-primary me-2"></i>Add New Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Full Name *</label>
+                            <input type="text" name="full_name" class="form-control" required placeholder="e.g. Aryan Sharma">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email Address *</label>
+                            <input type="email" name="email" class="form-control" required placeholder="aryan.s@campushire.edu">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Enrollment Number *</label>
+                            <input type="text" name="enrollment_number" class="form-control font-mono" required placeholder="EN2021CSE025">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Department *</label>
+                            <select name="department_id" class="form-select" required>
+                                {% for d in departments %}
+                                <option value="{{ d.department_id }}">{{ d.department_name }} ({{ d.department_code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Graduation Year *</label>
+                            <input type="number" name="graduation_year" class="form-control" value="2025" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">CGPA (0.00 - 10.00) *</label>
+                            <input type="number" step="0.01" min="0" max="10" name="cgpa" class="form-control" required placeholder="8.75">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Active Backlogs *</label>
+                            <input type="number" min="0" name="active_backlogs" class="form-control" value="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Phone Number</label>
+                            <input type="text" name="phone" class="form-control" placeholder="9876543210">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Resume Link</label>
+                            <input type="url" name="resume_url" class="form-control" placeholder="https://campushire.edu/resumes/...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Save Student Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: EDIT STUDENT -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="editStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editStudentForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit Student Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Editing record for: <strong id="editStudentName" class="text-dark"></strong></p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">CGPA (0.00 - 10.00) *</label>
+                            <input type="number" step="0.01" min="0" max="10" name="cgpa" id="editStudentCgpa" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Active Backlogs *</label>
+                            <input type="number" min="0" name="active_backlogs" id="editStudentBacklogs" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Phone Number</label>
+                            <input type="text" name="phone" id="editStudentPhone" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Profile Status</label>
+                            <select name="profile_status" class="form-select">
+                                <option value="VERIFIED">VERIFIED</option>
+                                <option value="PENDING_VERIFICATION">PENDING_VERIFICATION</option>
+                                <option value="SUSPENDED">SUSPENDED</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Resume URL</label>
+                            <input type="url" name="resume_url" id="editStudentResume" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Update Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: VIEW STUDENT DETAILS -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="viewStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-id-card text-primary me-2"></i>Student Placement Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="studentDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openEditStudentModal(id, name, cgpa, backlogs) {
+    document.getElementById('editStudentForm').action = '/students/update/' + id;
+    document.getElementById('editStudentName').innerText = name;
+    document.getElementById('editStudentCgpa').value = cgpa;
+    document.getElementById('editStudentBacklogs').value = backlogs;
+
+    // Fetch full profile to populate phone, resume, status
+    fetch('/students/' + id + '/details')
+        .then(res => res.json())
+        .then(data => {
+            if (data.student) {
+                document.getElementById('editStudentPhone').value = data.student.phone || '';
+                document.getElementById('editStudentResume').value = data.student.resume_url || '';
+                const statusSelect = document.querySelector('#editStudentForm select[name="profile_status"]');
+                if (statusSelect) statusSelect.value = data.student.profile_status;
+            }
+        });
+
+    const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+    modal.show();
+}
+
+function exportStudentsToCSV() {
+    const table = document.getElementById('studentsTable');
+    if (!table) return;
+
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        let rowData = [];
+        // skip last column (actions)
+        for (let i = 0; i < cols.length - 1; i++) {
+            let text = cols[i].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+            rowData.push('"' + text + '"');
+        }
+        if (rowData.length > 0) csv.push(rowData.join(','));
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'CampusHire_Students_Report.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function viewStudentDetails(studentId) {
+    const modal = new bootstrap.Modal(document.getElementById('viewStudentModal'));
+    modal.show();
+    const container = document.getElementById('studentDetailsContent');
+    container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+
+    fetch('/students/' + studentId + '/details')
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                container.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            const s = data.student;
+            const apps = data.applications;
+
+            let html = `
+                <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                    <div class="col-md-6">
+                        <h5 class="fw-bold mb-1">${s.full_name}</h5>
+                        <p class="text-muted small mb-0">${s.email} &bull; ${s.phone || 'No phone'}</p>
+                        <p class="small font-mono text-primary mb-0 mt-1">${s.enrollment_number}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span class="badge bg-primary bg-opacity-10 text-primary fs-6 mb-1">${s.department_name}</span>
+                        <div>CGPA: <strong>${s.cgpa}</strong> | Backlogs: <strong>${s.active_backlogs}</strong></div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Recruitment Applications & Offers:</h6>
+            `;
+
+            if (apps.length === 0) {
+                html += `<div class="text-center py-3 text-muted">No applications recorded yet.</div>`;
+            } else {
+                html += `
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Company & Job Title</th>
+                                <th>Applied Date</th>
+                                <th>Status</th>
+                                <th>Offer Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                apps.forEach(a => {
+                    html += `
+                        <tr>
+                            <td>
+                                <strong>${a.company_name}</strong>
+                                <div class="small text-muted">${a.job_title}</div>
+                            </td>
+                            <td class="small">${a.application_date}</td>
+                            <td><span class="status-badge status-${a.application_status.toLowerCase()}">${a.application_status}</span></td>
+                            <td>
+                                ${a.offer_id ? `<span class="badge bg-success">₹${a.offered_package_lpa} LPA (${a.offer_status})</span>` : '<span class="text-muted small">No Offer</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table></div>`;
+            }
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            container.innerHTML = `<div class="alert alert-danger">Failed to load details.</div>`;
+        });
+}
+</script>
+{% endblock %}

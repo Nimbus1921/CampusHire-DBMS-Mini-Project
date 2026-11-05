@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Departments Management — CampusHire{% endblock %}
+{% block page_title %}Academic Departments Management{% endblock %}
+{% block page_subtitle %}Manage academic branches, degree codes, and student enrollment mappings (3NF){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="alert alert-light border shadow-sm mb-0">
+            <i class="fa-solid fa-graduation-cap text-primary me-2"></i>
+            <strong>Relational Mapping:</strong> Academic departments are parent entities for both 
+            <span class="badge bg-secondary font-mono">students</span> (1:M via <code>department_id</code>) and 
+            <span class="badge bg-secondary font-mono">job_eligibility_departments</span> (M:N with recruitment drives).
+        </div>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <button class="btn btn-primary-custom btn-sm w-100 h-100 py-2" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+            <i class="fa-solid fa-plus me-1"></i> Add New Department
+        </button>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <h5>
+            <i class="fa-solid fa-building-columns text-primary"></i>
+            All Departments (Table: departments)
+        </h5>
+        <span class="badge bg-light text-secondary border font-mono small">{{ departments|length }} Registered</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Dept ID</th>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Enrolled Students</th>
+                    <th>Description</th>
+                    <th>Created At</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in departments %}
+                <tr>
+                    <td><span class="badge bg-light text-secondary border font-mono">#{{ d.department_id }}</span></td>
+                    <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold font-mono">{{ d.department_code }}</span></td>
+                    <td class="fw-bold text-dark">{{ d.department_name }}</td>
+                    <td>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ d.student_count }} Students</span>
+                    </td>
+                    <td class="small text-secondary" style="max-width: 320px;">
+                        {{ d.description or '&mdash;'|safe }}
+                    </td>
+                    <td class="small text-muted font-mono">{{ d.created_at }}</td>
+                    <td class="text-end">
+                        {% if d.student_count == 0 %}
+                        <form action="{{ url_for('delete_department', dept_id=d.department_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete department {{ d.department_code }}?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Department">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small" title="Cannot delete department with active enrolled students"><i class="fa-solid fa-lock text-secondary"></i> In Use</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL: ADD DEPARTMENT -->
+<div class="modal fade" id="addDeptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('create_department') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-building-columns text-primary me-2"></i>Add Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department Name *</label>
+                        <input type="text" name="department_name" class="form-control" required placeholder="e.g. Artificial Intelligence & Data Science">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department Code (Short) *</label>
+                        <input type="text" name="department_code" class="form-control font-mono text-uppercase" required placeholder="e.g. AI-DS">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Brief department description..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Create Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Stored Procedures, Functions & Cursors — CampusHire{% endblock %}
+{% block page_title %}Stored Procedures, Functions & Cursors{% endblock %}
+{% block page_subtitle %}Live execution console for advanced PL/SQL database routines and procedural logic{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Procedure 1: sp_get_eligible_students -->
+    <div class="col-lg-6">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <div>
+                    <h5 class="mb-1"><i class="fa-solid fa-filter text-primary me-2"></i>sp_get_eligible_students</h5>
+                    <span class="badge bg-primary bg-opacity-10 text-primary font-mono small">Stored Procedure with Input Param</span>
+                </div>
+            </div>
+            <div class="card-custom-body">
+                <p class="text-muted small">
+                    Finds all eligible students for a specific recruitment drive based on minimum CGPA, maximum backlogs, active account status, and eligible branch mapping.
+                </p>
+                <div class="input-group input-group-sm mb-3">
+                    <label class="input-group-text bg-light fw-bold">Select Job Drive:</label>
+                    <select id="procJobSelect" class="form-select">
+                        {% for j in jobs %}
+                        <option value="{{ j.job_id }}">{{ j.job_id }}: {{ j.job_title }} (₹{{ j.package_lpa }} LPA)</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary-custom" type="button" onclick="runEligibleStudents()">
+                        <i class="fa-solid fa-play me-1"></i> Execute
+                    </button>
+                </div>
+
+                <div id="eligibleStudentsResult" class="border rounded p-3 bg-light small" style="min-height: 120px; max-height: 320px; overflow-y: auto;">
+                    <div class="text-muted text-center py-4">Click "Execute" to run <code>CALL sp_get_eligible_students(job_id)</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Procedure 2: sp_cursor_interview_round_statistics -->
+    <div class="col-lg-6">
+        <div class="card-custom h-100">
+            <div class="card-custom-header">
+                <div>
+                    <h5 class="mb-1"><i class="fa-solid fa-arrows-spin text-success me-2"></i>sp_cursor_interview_round_statistics</h5>
+                    <span class="badge bg-success bg-opacity-10 text-success font-mono small">PL/SQL Cursor Demonstration</span>
+                </div>
+                <button class="btn btn-sm btn-outline-success" onclick="runCursorStats()">
+                    <i class="fa-solid fa-play me-1"></i> Execute Cursor
+                </button>
+            </div>
+            <div class="card-custom-body">
+                <p class="text-muted small">
+                    Declares <code>cur_rounds CURSOR FOR SELECT round_status, score FROM interview_rounds</code>, fetches row-by-row in a loop with <code>CONTINUE HANDLER FOR NOT FOUND</code>, and computes aggregated metrics.
+                </p>
+                <div id="cursorResult" class="border rounded p-3 bg-light" style="min-height: 180px;">
+                    <div class="text-muted text-center py-4">Click "Execute Cursor" to fetch records via cursor iteration.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Procedure 3: sp_get_company_placement_summary -->
+    <div class="col-12">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <div>
+                    <h5 class="mb-1"><i class="fa-solid fa-building-user text-info me-2"></i>sp_get_company_placement_summary</h5>
+                    <span class="badge bg-info bg-opacity-10 text-info font-mono small">Aggregated Reporting Procedure</span>
+                </div>
+                <button class="btn btn-sm btn-outline-info" onclick="runCompanySummary()">
+                    <i class="fa-solid fa-play me-1"></i> Execute Procedure
+                </button>
+            </div>
+            <div class="card-custom-body">
+                <p class="text-muted small mb-3">
+                    Aggregates companies, total drives posted, applications received, interviews conducted, candidates hired, and highest/average packages.
+                </p>
+                <div id="companySummaryResult" class="table-responsive border rounded bg-light" style="min-height: 140px;">
+                    <div class="text-muted text-center py-4">Click "Execute Procedure" to view company recruitment analytics.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Procedure 4: sp_get_department_placement_report -->
+    <div class="col-12">
+        <div class="card-custom">
+            <div class="card-custom-header flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-1"><i class="fa-solid fa-graduation-cap text-warning me-2"></i>sp_get_department_placement_report</h5>
+                    <span class="badge bg-warning bg-opacity-10 text-warning font-mono small">Department Placement Analytics</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="gradYearSelect" class="form-select form-select-sm" style="width: 140px;">
+                        <option value="">All Batches</option>
+                        <option value="2025" selected>Batch 2025</option>
+                        <option value="2026">Batch 2026</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-warning" onclick="runDeptReport()">
+                        <i class="fa-solid fa-play me-1"></i> Execute
+                    </button>
+                </div>
+            </div>
+            <div class="card-custom-body">
+                <p class="text-muted small mb-3">
+                    Calculates department-wise total students, placed vs unplaced count, placement percentage, and package distributions.
+                </p>
+                <div id="deptReportResult" class="table-responsive border rounded bg-light" style="min-height: 140px;">
+                    <div class="text-muted text-center py-4">Click "Execute" to run department report procedure.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function runEligibleStudents() {
+    const jobId = document.getElementById('procJobSelect').value;
+    const container = document.getElementById('eligibleStudentsResult');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Computing...</div>';
+
+    fetch('/api/procedures/eligible_students/' + jobId)
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                container.innerHTML = `<div class="alert alert-danger mb-0">${res.error}</div>`;
+                return;
+            }
+            const d = res.data;
+            let html = `
+                <div class="mb-2 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <strong>${d.job_title}</strong>
+                    <span class="badge bg-secondary">Min CGPA: ${d.minimum_cgpa} | Max Backlogs: ${d.maximum_backlogs}</span>
+                </div>
+                <div class="fw-bold mb-2 text-success">Total Eligible Students Found: ${d.eligible_students.length}</div>
+            `;
+            if (d.eligible_students.length === 0) {
+                html += `<div class="text-muted">No students qualify based on current eligibility filters.</div>`;
+            } else {
+                html += `
+                <table class="table table-sm table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Dept</th>
+                            <th>CGPA</th>
+                            <th>Backlogs</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                `;
+                d.eligible_students.forEach(s => {
+                    html += `
+                        <tr>
+                            <td><strong>${s.student_name}</strong> (${s.enrollment_number})</td>
+                            <td><span class="badge bg-light text-dark border">${s.department_code}</span></td>
+                            <td class="fw-bold text-success">${s.cgpa}</td>
+                            <td>${s.active_backlogs}</td>
+                            <td><span class="badge ${s.application_status === 'ALREADY_APPLIED' ? 'bg-info' : 'bg-secondary'}">${s.application_status}</span></td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table>`;
+            }
+            container.innerHTML = html;
+        });
+}
+
+function runCursorStats() {
+    const container = document.getElementById('cursorResult');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-success"></div> Iterating cursor...</div>';
+
+    fetch('/api/procedures/cursor_statistics')
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                container.innerHTML = `<div class="alert alert-danger mb-0">${res.error}</div>`;
+                return;
+            }
+            const d = res.data;
+            container.innerHTML = `
+                <div class="row g-2 text-center">
+                    <div class="col-6 col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <div class="text-muted small">Total Rounds</div>
+                            <div class="fs-4 fw-bold text-dark">${d.total_interview_rounds}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <div class="text-muted small">Passed</div>
+                            <div class="fs-4 fw-bold text-success">${d.total_passed}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <div class="text-muted small">Failed</div>
+                            <div class="fs-4 fw-bold text-danger">${d.total_failed}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <div class="text-muted small">Pending</div>
+                            <div class="fs-4 fw-bold text-warning">${d.total_pending}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <div class="text-muted small">Not Attended</div>
+                            <div class="fs-4 fw-bold text-secondary">${d.total_not_attended}</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="p-2 bg-white rounded border border-success">
+                            <div class="text-muted small">Avg Evaluated Score</div>
+                            <div class="fs-4 fw-bold text-primary">${d.average_score_of_evaluated_rounds} / 100</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+function runCompanySummary() {
+    const container = document.getElementById('companySummaryResult');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-info"></div> Executing...</div>';
+
+    fetch('/api/procedures/company_summary')
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                container.innerHTML = `<div class="alert alert-danger mb-0">${res.error}</div>`;
+                return;
+            }
+            const rows = res.data;
+            let html = `
+                <table class="table table-custom align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Industry</th>
+                            <th>Drives Posted</th>
+                            <th>Applications</th>
+                            <th>Interviews</th>
+                            <th>Hired</th>
+                            <th>Highest Package</th>
+                            <th>Average Package</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            rows.forEach(r => {
+                html += `
+                    <tr>
+                        <td class="fw-bold">${r.company_name}</td>
+                        <td class="text-muted small">${r.industry}</td>
+                        <td>${r.total_drives_posted}</td>
+                        <td>${r.total_applications_received}</td>
+                        <td>${r.interviews_conducted}</td>
+                        <td><span class="badge bg-success bg-opacity-10 text-success fw-bold">${r.candidates_hired}</span></td>
+                        <td class="fw-bold text-success">₹${r.highest_package_lpa} LPA</td>
+                        <td class="text-muted">₹${r.average_package_lpa} LPA</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        });
+}
+
+function runDeptReport() {
+    const year = document.getElementById('gradYearSelect').value;
+    const container = document.getElementById('deptReportResult');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-warning"></div> Executing...</div>';
+
+    fetch('/api/procedures/department_report?year=' + year)
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                container.innerHTML = `<div class="alert alert-danger mb-0">${res.error}</div>`;
+                return;
+            }
+            const rows = res.data;
+            let html = `
+                <table class="table table-custom align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Department Name</th>
+                            <th>Total Students</th>
+                            <th>Placed</th>
+                            <th>Unplaced</th>
+                            <th>Placement %</th>
+                            <th>Highest Package</th>
+                            <th>Average Package</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            rows.forEach(r => {
+                html += `
+                    <tr>
+                        <td class="fw-bold text-primary">${r.department_code}</td>
+                        <td>${r.department_name}</td>
+                        <td>${r.total_students}</td>
+                        <td><span class="badge bg-success bg-opacity-10 text-success fw-bold">${r.placed_students}</span></td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${r.unplaced_students}</span></td>
+                        <td class="fw-bold text-dark">${r.placement_percentage || 0.0}%</td>
+                        <td class="fw-bold text-success">₹${r.max_package_lpa} LPA</td>
+                        <td class="text-muted">₹${r.avg_package_lpa} LPA</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        });
+}
+</script>
+{% endblock %}

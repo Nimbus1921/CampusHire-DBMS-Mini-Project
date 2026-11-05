@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Companies & Job Openings — CampusHire{% endblock %}
+{% block page_title %}Companies & Recruitment Drives{% endblock %}
+{% block page_subtitle %}Manage partner recruiting companies and campus drives (3NF Normalized Schema){% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Top Action Cards -->
+    <div class="col-md-6">
+        <div class="card-custom h-100">
+            <div class="card-custom-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Partner Companies</h5>
+                    <p class="text-muted small mb-0">Total {{ companies|length }} recruiting corporate partners registered.</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
+                    <i class="fa-solid fa-building me-1"></i> Add Company
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-custom h-100">
+            <div class="card-custom-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1">Recruitment Drives</h5>
+                    <p class="text-muted small mb-0">Total {{ jobs|length }} active or completed placement drives.</p>
+                </div>
+                <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#addJobModal">
+                    <i class="fa-solid fa-plus me-1"></i> Post New Job Drive
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <h5>
+            <i class="fa-solid fa-briefcase text-primary"></i>
+            Campus Recruitment Drives List
+        </h5>
+        <span class="badge bg-light text-primary border font-mono small">VIEW: v_job_opening_company_summary</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Company & Role</th>
+                    <th>Type</th>
+                    <th>Package (LPA)</th>
+                    <th>Eligibility Criteria</th>
+                    <th>Eligible Branches</th>
+                    <th>Applicants</th>
+                    <th>Status</th>
+                    <th class="text-end">Manage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for j in jobs %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ j.job_title }}</div>
+                        <div class="text-muted small">
+                            <i class="fa-solid fa-building me-1"></i>{{ j.company_name }} &bull; 
+                            <i class="fa-solid fa-location-dot me-1"></i>{{ j.location }}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-secondary border font-mono small">{{ j.job_type }}</span>
+                    </td>
+                    <td class="fw-bold text-success fs-6">₹{{ j.package_lpa }} LPA</td>
+                    <td>
+                        <div class="small">Min CGPA: <strong>{{ j.minimum_cgpa }}</strong></div>
+                        <div class="small text-muted">Max Backlogs: <strong>{{ j.maximum_backlogs }}</strong></div>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">{{ j.eligible_departments or 'All Branches' }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-mono">{{ j.total_applicants }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ j.job_status|lower }}">{{ j.job_status }}</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <form action="{{ url_for('update_job_status', job_id=j.job_id) }}" method="POST" class="d-inline">
+                                <select name="job_status" class="form-select form-select-sm" style="width: 105px;" onchange="this.form.submit()">
+                                    <option value="OPEN" {% if j.job_status == 'OPEN' %}selected{% endif %}>OPEN</option>
+                                    <option value="CLOSED" {% if j.job_status == 'CLOSED' %}selected{% endif %}>CLOSED</option>
+                                    <option value="DRAFT" {% if j.job_status == 'DRAFT' %}selected{% endif %}>DRAFT</option>
+                                    <option value="CANCELLED" {% if j.job_status == 'CANCELLED' %}selected{% endif %}>CANCEL</option>
+                                </select>
+                            </form>
+                            <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Job Drive" onclick="openEditJobModal({{ j.job_id }}, '{{ j.job_title }}', '{{ j.job_type }}', '{{ j.location }}', {{ j.package_lpa }}, {{ j.minimum_cgpa }}, {{ j.maximum_backlogs }}, '{{ j.application_deadline }}', '{{ j.job_status }}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <form action="{{ url_for('delete_job', job_id=j.job_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete Job Drive: {{ j.job_title }}?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Drive">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ADD COMPANY -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="addCompanyModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('create_company') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-building text-primary me-2"></i>Register New Company</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Company Name *</label>
+                            <input type="text" name="company_name" class="form-control" required placeholder="e.g. Adobe Systems">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Industry Sector *</label>
+                            <input type="text" name="industry" class="form-control" required placeholder="Software & Cloud">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Headquarters</label>
+                            <input type="text" name="headquarters" class="form-control" placeholder="Noida / Bengaluru">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Official Careers Website</label>
+                            <input type="url" name="website" class="form-control" placeholder="https://careers.adobe.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea name="company_description" class="form-control" rows="2" placeholder="Brief overview..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Register Company</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: POST JOB DRIVE -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="addJobModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('create_job') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-briefcase text-primary me-2"></i>Post New Recruitment Drive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Company *</label>
+                            <select name="company_id" class="form-select" required>
+                                {% for c in companies %}
+                                <option value="{{ c.company_id }}">{{ c.company_name }} ({{ c.industry }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Job Title *</label>
+                            <input type="text" name="job_title" class="form-control" required placeholder="e.g. Graduate Trainee Engineer">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Job Type *</label>
+                            <select name="job_type" class="form-select">
+                                <option value="FULL_TIME">FULL_TIME</option>
+                                <option value="INTERNSHIP">INTERNSHIP</option>
+                                <option value="INTERN_TO_FTE">INTERN_TO_FTE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Package (LPA in ₹) *</label>
+                            <input type="number" step="0.1" name="package_lpa" class="form-control" required placeholder="12.50">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Job Location *</label>
+                            <input type="text" name="location" class="form-control" required placeholder="Bengaluru / Hybrid">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Minimum CGPA (0-10)</label>
+                            <input type="number" step="0.01" min="0" max="10" name="minimum_cgpa" class="form-control" value="7.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Max Backlogs Permitted</label>
+                            <input type="number" min="0" name="maximum_backlogs" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Application Deadline *</label>
+                            <input type="datetime-local" name="application_deadline" class="form-control" required value="2026-12-31T23:59">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Drive Date</label>
+                            <input type="datetime-local" name="drive_date" class="form-control" value="2027-01-20T09:00">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Eligible Departments (Check all applicable) *</label>
+                            <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+                                {% for d in departments %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="department_ids" value="{{ d.department_id }}" id="dept_{{ d.department_id }}" checked>
+                                    <label class="form-check-label small" for="dept_{{ d.department_id }}">
+                                        <strong>{{ d.department_code }}</strong> ({{ d.department_name }})
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Job Description</label>
+                            <textarea name="job_description" class="form-control" rows="2" placeholder="Responsibilities, skills required..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Publish Job Drive</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: EDIT JOB DRIVE -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="editJobModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form id="editJobForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-briefcase text-primary me-2"></i>Edit Recruitment Drive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold">Job Title *</label>
+                            <input type="text" name="job_title" id="editJobTitle" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Job Type *</label>
+                            <select name="job_type" id="editJobType" class="form-select">
+                                <option value="FULL_TIME">FULL_TIME</option>
+                                <option value="INTERNSHIP">INTERNSHIP</option>
+                                <option value="INTERN_TO_FTE">INTERN_TO_FTE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Package (LPA in ₹) *</label>
+                            <input type="number" step="0.1" name="package_lpa" id="editJobPackage" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Location *</label>
+                            <input type="text" name="location" id="editJobLocation" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Drive Status *</label>
+                            <select name="job_status" id="editJobStatus" class="form-select">
+                                <option value="OPEN">OPEN</option>
+                                <option value="CLOSED">CLOSED</option>
+                                <option value="DRAFT">DRAFT</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Minimum CGPA (0.00 - 10.00)</label>
+                            <input type="number" step="0.01" min="0" max="10" name="minimum_cgpa" id="editJobCgpa" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Max Backlogs Permitted</label>
+                            <input type="number" min="0" name="maximum_backlogs" id="editJobBacklogs" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Application Deadline *</label>
+                            <input type="datetime-local" name="application_deadline" id="editJobDeadline" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Update Job Drive</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openEditJobModal(id, title, type, location, packageLpa, minCgpa, maxBacklogs, deadline, status) {
+    document.getElementById('editJobForm').action = '/jobs/update/' + id;
+    document.getElementById('editJobTitle').value = title;
+    document.getElementById('editJobType').value = type;
+    document.getElementById('editJobLocation').value = location;
+    document.getElementById('editJobPackage').value = packageLpa;
+    document.getElementById('editJobCgpa').value = minCgpa;
+    document.getElementById('editJobBacklogs').value = maxBacklogs;
+    document.getElementById('editJobStatus').value = status;
+
+    // Convert SQL timestamp (YYYY-MM-DD HH:MM:SS) to datetime-local format
+    if (deadline) {
+        document.getElementById('editJobDeadline').value = deadline.replace(' ', 'T').substring(0, 16);
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('editJobModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

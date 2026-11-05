@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Live SQL Query Terminal — CampusHire{% endblock %}
+{% block page_title %}Interactive SQL Query Terminal{% endblock %}
+{% block page_subtitle %}Execute custom DML, DDL & analytical queries directly on the live database{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card-custom">
+            <div class="card-custom-header d-flex align-items-center justify-content-between">
+                <h5>
+                    <i class="fa-solid fa-terminal text-primary"></i>
+                    SQL Query Editor
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearQuery()">
+                        <i class="fa-solid fa-eraser me-1"></i> Clear
+                    </button>
+                    <button class="btn btn-primary-custom btn-sm" onclick="runQuery()">
+                        <i class="fa-solid fa-play me-1"></i> Execute Query (Ctrl+Enter)
+                    </button>
+                </div>
+            </div>
+            <div class="card-custom-body">
+                <!-- Preset Sample Query Chips -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="small fw-bold text-muted"><i class="fa-solid fa-lightbulb text-warning me-1"></i>Preset Queries:</span>
+                    <button class="btn btn-xs btn-outline-primary py-1 px-2 rounded-pill small" onclick="loadQuery(1)">All CSE High Achievers (CGPA &gt; 8.5)</button>
+                    <button class="btn btn-xs btn-outline-success py-1 px-2 rounded-pill small" onclick="loadQuery(2)">Unplaced Students</button>
+                    <button class="btn btn-xs btn-outline-info py-1 px-2 rounded-pill small" onclick="loadQuery(3)">Top Package Offers by Company</button>
+                    <button class="btn btn-xs btn-outline-warning py-1 px-2 rounded-pill small" onclick="loadQuery(4)">Audit Trail Trigger Logs</button>
+                    <button class="btn btn-xs btn-outline-dark py-1 px-2 rounded-pill small" onclick="loadQuery(5)">Placement Summary View</button>
+                </div>
+
+                <textarea id="sqlQueryInput" class="form-control font-mono p-3 bg-dark text-light border-0 rounded-3" rows="5" style="font-size: 0.95rem; resize: vertical;" placeholder="Type your SQL query here... e.g. SELECT * FROM students WHERE cgpa > 8.0;">SELECT * FROM v_student_placement_summary WHERE cgpa >= 8.50;</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-12">
+        <div class="card-custom">
+            <div class="card-custom-header d-flex align-items-center justify-content-between">
+                <h5>
+                    <i class="fa-solid fa-table-list text-success"></i>
+                    Execution Output & Results
+                </h5>
+                <div id="queryMeta" class="d-flex align-items-center gap-2 font-mono small text-muted">
+                    <span>Ready</span>
+                </div>
+            </div>
+            <div class="card-custom-body p-0">
+                <div id="queryOutputContainer" class="table-responsive" style="min-height: 200px; max-height: 500px; overflow-y: auto;">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-terminal fs-2 d-block mb-2 text-secondary"></i>
+                        Execute a query above to inspect live tabular results.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const presetQueries = {
+    1: `SELECT s.student_id, u.full_name, s.enrollment_number, d.department_code, s.cgpa, s.active_backlogs\nFROM students s\nJOIN users u ON s.user_id = u.user_id\nJOIN departments d ON s.department_id = d.department_id\nWHERE d.department_code = 'CSE' AND s.cgpa >= 8.50\nORDER BY s.cgpa DESC;`,
+    2: `SELECT s.enrollment_number, u.full_name, d.department_code, s.cgpa, s.active_backlogs\nFROM students s\nJOIN users u ON s.user_id = u.user_id\nJOIN departments d ON s.department_id = d.department_id\nWHERE s.student_id NOT IN (\n    SELECT a.student_id \n    FROM applications a \n    JOIN placement_offers o ON a.application_id = o.application_id \n    WHERE o.offer_status = 'ACCEPTED'\n)\nORDER BY s.cgpa DESC;`,
+    3: `SELECT c.company_name, j.job_title, o.offered_package_lpa, u.full_name AS student_name, o.offer_status\nFROM placement_offers o\nJOIN applications a ON o.application_id = a.application_id\nJOIN job_openings j ON a.job_id = j.job_id\nJOIN companies c ON j.company_id = c.company_id\nJOIN students s ON a.student_id = s.student_id\nJOIN users u ON s.user_id = u.user_id\nORDER BY o.offered_package_lpa DESC;`,
+    4: `SELECT audit_id, action, entity_type, entity_id, details, created_at \nFROM audit_logs \nORDER BY audit_id DESC \nLIMIT 20;`,
+    5: `SELECT * FROM v_department_placement_statistics;`
+};
+
+function loadQuery(num) {
+    if (presetQueries[num]) {
+        document.getElementById('sqlQueryInput').value = presetQueries[num];
+    }
+}
+
+function clearQuery() {
+    document.getElementById('sqlQueryInput').value = '';
+    document.getElementById('queryOutputContainer').innerHTML = '<div class="text-center py-5 text-muted">Editor cleared.</div>';
+    document.getElementById('queryMeta').innerHTML = '<span>Ready</span>';
+}
+
+function runQuery() {
+    const query = document.getElementById('sqlQueryInput').value.trim();
+    if (!query) {
+        alert('Please enter a SQL query.');
+        return;
+    }
+
+    const container = document.getElementById('queryOutputContainer');
+    const meta = document.getElementById('queryMeta');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted small">Executing SQL query...</div></div>';
+    meta.innerHTML = '<span class="text-primary"><i class="fa-solid fa-spinner fa-spin me-1"></i>Executing</span>';
+
+    fetch('/api/sql/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (!res.success) {
+            meta.innerHTML = `<span class="badge bg-danger">Execution Failed</span>`;
+            container.innerHTML = `
+                <div class="p-4">
+                    <div class="alert alert-danger mb-0">
+                        <h6 class="fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>SQL Execution Error:</h6>
+                        <pre class="mb-0 font-mono text-dark" style="white-space: pre-wrap;">${res.error}</pre>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (res.is_select) {
+            meta.innerHTML = `
+                <span class="badge bg-success bg-opacity-10 text-success">${res.row_count} Rows Returned</span>
+                <span class="badge bg-light text-dark border">${res.duration_ms} ms</span>
+                <button class="btn btn-sm btn-outline-success py-0 px-2 ms-2" onclick="exportSqlResultsToCSV()"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</button>
+            `;
+
+            if (res.row_count === 0) {
+                container.innerHTML = '<div class="text-center py-5 text-muted">Query executed successfully. 0 rows returned.</div>';
+                return;
+            }
+
+            let html = '<table id="sqlResultTable" class="table table-custom align-middle mb-0 font-mono small"><thead><tr>';
+            res.columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            res.rows.forEach(row => {
+                html += '<tr>';
+                res.columns.forEach(col => {
+                    const val = row[col];
+                    html += `<td>${val === null ? '<span class="text-muted fst-italic">NULL</span>' : val}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } else {
+            meta.innerHTML = `
+                <span class="badge bg-primary bg-opacity-10 text-primary">${res.affected_rows} Rows Affected</span>
+                <span class="badge bg-light text-dark border">${res.duration_ms} ms</span>
+            `;
+            container.innerHTML = `
+                <div class="p-4 text-center">
+                    <div class="alert alert-success d-inline-block px-5 py-3 shadow-sm mb-0">
+                        <i class="fa-solid fa-circle-check fs-2 text-success d-block mb-2"></i>
+                        <h6 class="fw-bold mb-1">Query Executed Successfully!</h6>
+                        <p class="mb-0 text-secondary font-mono small">Rows Affected: <strong>${res.affected_rows}</strong> &bull; Time: <strong>${res.duration_ms} ms</strong></p>
+                    </div>
+                </div>
+            `;
+        }
+    })
+    .catch(err => {
+        meta.innerHTML = '<span class="badge bg-danger">Network Error</span>';
+        container.innerHTML = `<div class="p-4"><div class="alert alert-danger">${err}</div></div>`;
+    });
+}
+
+// Shortcut Ctrl+Enter to execute
+document.getElementById('sqlQueryInput').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        runQuery();
+    }
+});
+
+function exportSqlResultsToCSV() {
+    const table = document.getElementById('sqlResultTable');
+    if (!table) return;
+
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        let rowData = [];
+        cols.forEach(c => {
+            let text = c.innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+            rowData.push('"' + text + '"');
+        });
+        if (rowData.length > 0) csv.push(rowData.join(','));
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'CampusHire_SQL_Query_Output.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}
