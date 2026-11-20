@@ -27,12 +27,20 @@
 
 <!-- Interactive Mermaid ER Diagram -->
 <div class="card-custom mb-4">
-    <div class="card-custom-header">
+    <div class="card-custom-header flex-wrap gap-2">
         <h5>
             <i class="fa-solid fa-diagram-project text-primary"></i>
             Entity-Relationship (ER) Diagram
         </h5>
-        <span class="badge bg-light text-secondary border font-mono small">Mermaid Diagram Engine</span>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                <i class="fa-solid fa-print me-1"></i> Print Schema Report
+            </button>
+            <a href="{{ url_for('backup_database') }}" class="btn btn-sm btn-outline-success">
+                <i class="fa-solid fa-download me-1"></i> Download DB Backup
+            </a>
+            <span class="badge bg-light text-secondary border font-mono small">Mermaid Diagram Engine</span>
+        </div>
     </div>
     <div class="card-custom-body bg-white text-center overflow-auto py-4">
         <div class="mermaid">

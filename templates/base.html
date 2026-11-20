@@ -453,11 +453,16 @@
                 <span>Placement Rate:</span>
                 <span class="text-success fw-bold">{{ nav_placement_rate }}%</span>
             </div>
-            <form action="{{ url_for('reset_database') }}" method="POST" onsubmit="return confirm('Reset database back to default sample dataset?');">
-                <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-light py-1" style="font-size: 0.76rem; border-color: #334155;">
-                    <i class="fa-solid fa-rotate-left me-1"></i> Reset Sample Data
-                </button>
-            </form>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('backup_database') }}" class="btn btn-outline-info btn-sm w-50 text-light py-1" style="font-size: 0.74rem; border-color: #334155;" title="Download live SQLite DB backup">
+                    <i class="fa-solid fa-download me-1"></i> Backup DB
+                </a>
+                <form action="{{ url_for('reset_database') }}" method="POST" onsubmit="return confirm('Reset database back to default sample dataset?');" class="w-50">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-light py-1" style="font-size: 0.74rem; border-color: #334155;" title="Reset to initial sample dataset">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                    </button>
+                </form>
+            </div>
         </div>
     </aside>
 
@@ -470,6 +475,20 @@
                 <p>{% block page_subtitle %}Campus Recruitment & Placement System (MySQL / 3NF Normalized){% endblock %}</p>
             </div>
             <div class="d-flex align-items-center gap-3">
+                <!-- Role Demonstration Switcher -->
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 py-1 px-3 rounded-pill bg-white" type="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-user-shield text-primary"></i>
+                        <span class="small fw-semibold" id="activeRoleLabel">Prof. Anand Sharma (Admin)</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><h6 class="dropdown-header small text-uppercase">Demonstration Roles</h6></li>
+                        <li><a class="dropdown-item small" href="#" onclick="switchDemoRole('Prof. Anand Sharma (Admin)', 'ADMIN')"><i class="fa-solid fa-user-tie text-primary me-2"></i>Admin: Prof. Anand Sharma</a></li>
+                        <li><a class="dropdown-item small" href="#" onclick="switchDemoRole('Sarah Jenkins (Google Recruiter)', 'RECRUITER')"><i class="fa-solid fa-building text-info me-2"></i>Recruiter: Sarah Jenkins</a></li>
+                        <li><a class="dropdown-item small" href="#" onclick="switchDemoRole('Rahul Verma (Student - CSE)', 'STUDENT')"><i class="fa-solid fa-graduation-cap text-success me-2"></i>Student: Rahul Verma</a></li>
+                    </ul>
+                </div>
+
                 <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-pill border">
                     <span class="badge bg-success rounded-circle p-1" style="width: 8px; height: 8px; display: inline-block;"></span>
                     <span class="small fw-semibold text-secondary">Database: Active (3NF / 11 Tables)</span>
@@ -512,6 +531,39 @@ setTimeout(() => {
         if (bsAlert) bsAlert.close();
     });
 }, 4500);
+
+// Demo Role Switcher
+function switchDemoRole(name, role) {
+    document.getElementById('activeRoleLabel').innerText = name;
+    localStorage.setItem('campushire_active_role', JSON.stringify({name: name, role: role}));
+}
+
+// Restore saved demo role
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('campushire_active_role');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.name) document.getElementById('activeRoleLabel').innerText = data.name;
+        } catch(e) {}
+    }
+});
+
+// Reusable live instant table search
+function setupLiveTableSearch(inputId, tableId) {
+    const input = document.getElementById(inputId);
+    const table = document.getElementById(tableId);
+    if (!input || !table) return;
+
+    input.addEventListener('keyup', function() {
+        const query = input.value.toLowerCase().trim();
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+}
 </script>
 {% block extra_js %}{% endblock %}
 </body>

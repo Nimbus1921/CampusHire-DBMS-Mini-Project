@@ -36,16 +36,22 @@
 </div>
 
 <div class="card-custom">
-    <div class="card-custom-header">
+    <div class="card-custom-header flex-wrap gap-2">
         <h5>
             <i class="fa-solid fa-briefcase text-primary"></i>
             Campus Recruitment Drives List
         </h5>
-        <span class="badge bg-light text-primary border font-mono small">VIEW: v_job_opening_company_summary</span>
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 220px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="searchJobsInput" class="form-control" placeholder="Filter company, role...">
+            </div>
+            <span class="badge bg-light text-primary border font-mono small">VIEW: v_job_opening_company_summary</span>
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-custom align-middle">
+        <table id="jobsTable" class="table table-custom align-middle">
             <thead>
                 <tr>
                     <th>Company & Role</th>
@@ -327,5 +333,9 @@ function openEditJobModal(id, title, type, location, packageLpa, minCgpa, maxBac
     const modal = new bootstrap.Modal(document.getElementById('editJobModal'));
     modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupLiveTableSearch('searchJobsInput', 'jobsTable');
+});
 </script>
 {% endblock %}

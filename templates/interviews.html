@@ -24,16 +24,22 @@
 </div>
 
 <div class="card-custom">
-    <div class="card-custom-header">
+    <div class="card-custom-header flex-wrap gap-2">
         <h5>
             <i class="fa-solid fa-clipboard-check text-primary"></i>
             Scheduled Interview Rounds
         </h5>
-        <span class="badge bg-light text-secondary border font-mono small">{{ rounds|length }} Total Rounds</span>
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 220px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="searchInterviewsInput" class="form-control" placeholder="Search candidate, round...">
+            </div>
+            <span class="badge bg-light text-secondary border font-mono small">{{ rounds|length }} Total Rounds</span>
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-custom align-middle">
+        <table id="interviewsTable" class="table table-custom align-middle">
             <thead>
                 <tr>
                     <th>Candidate</th>
@@ -218,5 +224,9 @@ function openEvaluateModal(id, roundName, studentName, score, feedback, status) 
     const modal = new bootstrap.Modal(document.getElementById('evaluateModal'));
     modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupLiveTableSearch('searchInterviewsInput', 'interviewsTable');
+});
 </script>
 {% endblock %}

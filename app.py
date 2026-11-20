@@ -6,7 +6,7 @@ Stored Procedures, Views, Cursors, and Interactive SQL Terminal.
 
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
 import database
 
 app = Flask(__name__)
@@ -1211,6 +1211,17 @@ def reset_database():
     except Exception as e:
         flash(f'Failed to reset database: {str(e)}', 'danger')
     return redirect(url_for('dashboard'))
+
+
+@app.route('/database/backup')
+def backup_database():
+    """Allows downloading a full binary backup of the live database."""
+    try:
+        filename = f"college_placement_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        return send_file(database.DB_PATH, as_attachment=True, download_name=filename)
+    except Exception as e:
+        flash(f'Backup failed: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
 
 
 if __name__ == '__main__':

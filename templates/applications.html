@@ -17,18 +17,24 @@
 </div>
 
 <div class="card-custom">
-    <div class="card-custom-header">
+    <div class="card-custom-header flex-wrap gap-2">
         <h5>
             <i class="fa-solid fa-file-signature text-primary"></i>
             Applications Pipeline (Total: {{ applications|length }})
         </h5>
-        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newApplicationModal">
-            <i class="fa-solid fa-paper-plane me-1"></i> Submit New Application
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 220px;">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="searchAppsInput" class="form-control" placeholder="Quick filter...">
+            </div>
+            <button class="btn btn-primary-custom btn-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#newApplicationModal">
+                <i class="fa-solid fa-paper-plane me-1"></i> Submit New Application
+            </button>
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-custom align-middle">
+        <table id="applicationsTable" class="table table-custom align-middle">
             <thead>
                 <tr>
                     <th>App ID</th>
@@ -137,4 +143,12 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    setupLiveTableSearch('searchAppsInput', 'applicationsTable');
+});
+</script>
 {% endblock %}

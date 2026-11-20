@@ -1,0 +1,260 @@
+================================================================================
+  CAMPHUSHIRE - DBMS MINI PROJECT: READY-TO-USE SQL QUERIES LIST
+================================================================================
+Instructions:
+1. Open your CampusHire website at http://127.0.0.1:5000/sql
+2. Copy any query below and paste it into the "SQL Query Editor" box.
+3. Click "Execute Query" (or press Ctrl + Enter).
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SECTION 1: BASIC FILTERING & SORTING (WHERE, ORDER BY)
+--------------------------------------------------------------------------------
+
+[QUERY 1] Find all high-performing students with CGPA >= 8.5 and 0 backlogs:
+--------------------------------------------------------------------------------
+SELECT student_id, enrollment_number, cgpa, active_backlogs 
+FROM students 
+WHERE cgpa >= 8.50 AND active_backlogs = 0 
+ORDER BY cgpa DESC;
+
+
+[QUERY 2] Find all OPEN recruitment drives offering packages >= 10.00 LPA:
+--------------------------------------------------------------------------------
+SELECT job_id, job_title, package_lpa, location, minimum_cgpa 
+FROM job_openings 
+WHERE job_status = 'OPEN' AND package_lpa >= 10.00 
+ORDER BY package_lpa DESC;
+
+
+[QUERY 3] List all verified students sorted from highest to lowest CGPA:
+--------------------------------------------------------------------------------
+SELECT enrollment_number, cgpa, active_backlogs, profile_status 
+FROM students 
+WHERE profile_status = 'VERIFIED' 
+ORDER BY cgpa DESC;
+
+
+
+--------------------------------------------------------------------------------
+SECTION 2: RELATIONAL JOINS (3NF MULTI-TABLE QUERIES)
+--------------------------------------------------------------------------------
+
+[QUERY 4] Student Profiles with Names, Branch Code, and CGPA (3-Table JOIN):
+--------------------------------------------------------------------------------
+SELECT s.enrollment_number, u.full_name, d.department_code, s.cgpa, s.phone 
+FROM students s 
+JOIN users u ON s.user_id = u.user_id 
+JOIN departments d ON s.department_id = d.department_id 
+WHERE d.department_code = 'CSE' 
+ORDER BY s.cgpa DESC;
+
+
+[QUERY 5] All Job Openings with Company Name and Industry (2-Table JOIN):
+--------------------------------------------------------------------------------
+SELECT j.job_id, c.company_name, c.industry, j.job_title, j.package_lpa, j.location 
+FROM job_openings j 
+JOIN companies c ON j.company_id = c.company_id 
+ORDER BY j.package_lpa DESC;
+
+
+[QUERY 6] Complete Placement Offer Dossier with Student, Company, Role & Package (5-Table JOIN):
+--------------------------------------------------------------------------------
+SELECT u.full_name AS student_name, 
+       c.company_name, 
+       j.job_title, 
+       o.offered_package_lpa, 
+       o.offer_status, 
+       o.offer_date 
+FROM placement_offers o 
+JOIN applications a ON o.application_id = a.application_id 
+JOIN students s ON a.student_id = s.student_id 
+JOIN users u ON s.user_id = u.user_id 
+JOIN job_openings j ON a.job_id = j.job_id 
+JOIN companies c ON j.company_id = c.company_id 
+ORDER BY o.offered_package_lpa DESC;
+
+
+[QUERY 7] Interview Evaluation Scores with Candidate and Evaluator Recruiter (4-Table JOIN):
+--------------------------------------------------------------------------------
+SELECT u_stud.full_name AS candidate_name, 
+       j.job_title, 
+       r.round_name, 
+       r.score, 
+       r.round_status, 
+       u_rec.full_name AS evaluated_by 
+FROM interview_rounds r 
+JOIN applications a ON r.application_id = a.application_id 
+JOIN students s ON a.student_id = s.student_id 
+JOIN users u_stud ON s.user_id = u_stud.user_id 
+JOIN job_openings j ON a.job_id = j.job_id 
+LEFT JOIN users u_rec ON r.evaluated_by = u_rec.user_id 
+ORDER BY r.score DESC;
+
+
+
+--------------------------------------------------------------------------------
+SECTION 3: AGGREGATE QUERIES (GROUP BY & HAVING)
+--------------------------------------------------------------------------------
+
+[QUERY 8] Department-wise Student Count, Average CGPA, and Highest CGPA:
+--------------------------------------------------------------------------------
+SELECT d.department_code, 
+       COUNT(s.student_id) AS total_students, 
+       ROUND(AVG(s.cgpa), 2) AS average_cgpa, 
+       MAX(s.cgpa) AS highest_cgpa 
+FROM departments d 
+LEFT JOIN students s ON d.department_id = s.department_id 
+GROUP BY d.department_id, d.department_code;
+
+
+[QUERY 9] Companies Offering Highest Package Above 10 LPA (HAVING Clause):
+--------------------------------------------------------------------------------
+SELECT c.company_name, 
+       COUNT(j.job_id) AS drives_count, 
+       MAX(j.package_lpa) AS highest_package_lpa 
+FROM companies c 
+JOIN job_openings j ON c.company_id = j.company_id 
+GROUP BY c.company_name 
+HAVING highest_package_lpa > 10.00;
+
+
+[QUERY 10] Application Pipeline Status Summary:
+--------------------------------------------------------------------------------
+SELECT application_status, 
+       COUNT(*) AS total_applications 
+FROM applications 
+GROUP BY application_status 
+ORDER BY total_applications DESC;
+
+
+
+--------------------------------------------------------------------------------
+SECTION 4: SUBQUERIES & NESTED QUERIES (IN, NOT IN)
+--------------------------------------------------------------------------------
+
+[QUERY 11] Find all Unplaced Students (Subquery with NOT IN):
+--------------------------------------------------------------------------------
+SELECT s.enrollment_number, u.full_name, s.cgpa 
+FROM students s 
+JOIN users u ON s.user_id = u.user_id 
+WHERE s.student_id NOT IN (
+    SELECT a.student_id 
+    FROM applications a 
+    JOIN placement_offers o ON a.application_id = o.application_id 
+    WHERE o.offer_status = 'ACCEPTED'
+) 
+ORDER BY s.cgpa DESC;
+
+
+[QUERY 12] Find Students who have applied to Google India:
+--------------------------------------------------------------------------------
+SELECT s.enrollment_number, u.full_name, s.cgpa 
+FROM students s 
+JOIN users u ON s.user_id = u.user_id 
+WHERE s.student_id IN (
+    SELECT a.student_id 
+    FROM applications a 
+    JOIN job_openings j ON a.job_id = j.job_id 
+    JOIN companies c ON j.company_id = c.company_id 
+    WHERE c.company_name = 'Google India'
+);
+
+
+
+--------------------------------------------------------------------------------
+SECTION 5: QUERYING DATABASE VIEWS
+--------------------------------------------------------------------------------
+
+[QUERY 13] Query Department Placement Statistics View:
+--------------------------------------------------------------------------------
+SELECT department_code, 
+       total_students, 
+       placed_students, 
+       placement_percentage, 
+       highest_package_lpa, 
+       average_package_lpa 
+FROM v_department_placement_statistics 
+ORDER BY placement_percentage DESC;
+
+
+[QUERY 14] Query Overall Student Placement Summary View:
+--------------------------------------------------------------------------------
+SELECT student_name, 
+       department_code, 
+       cgpa, 
+       placement_status, 
+       accepted_package_lpa 
+FROM v_student_placement_summary 
+ORDER BY cgpa DESC;
+
+
+[QUERY 15] Query Company Recruitment Drive Summary View:
+--------------------------------------------------------------------------------
+SELECT company_name, 
+       job_title, 
+       package_lpa, 
+       eligible_departments, 
+       total_applicants 
+FROM v_job_opening_company_summary 
+WHERE job_status = 'OPEN';
+
+
+
+--------------------------------------------------------------------------------
+SECTION 6: CALLING STORED FUNCTIONS
+--------------------------------------------------------------------------------
+
+[QUERY 16] Calculate Overall Placement Percentage via Stored Function:
+--------------------------------------------------------------------------------
+SELECT fn_calculate_overall_placement_percentage() AS overall_placement_rate_percentage;
+
+
+[QUERY 17] Calculate Department Placement Rate for CSE (Dept ID 1):
+--------------------------------------------------------------------------------
+SELECT fn_calculate_department_placement_percentage(1) AS cse_placement_rate_percentage;
+
+
+
+--------------------------------------------------------------------------------
+SECTION 7: DATABASE TRIGGERS & AUDIT TRAIL LOGS
+--------------------------------------------------------------------------------
+
+[QUERY 18] View Recent Trigger Executions and Audit Logs:
+--------------------------------------------------------------------------------
+SELECT audit_id, action, entity_type, details, created_at 
+FROM audit_logs 
+ORDER BY audit_id DESC 
+LIMIT 15;
+
+
+[QUERY 19] View Only Accepted Offers Logged Automatically by Triggers:
+--------------------------------------------------------------------------------
+SELECT audit_id, action, details, created_at 
+FROM audit_logs 
+WHERE action = 'PLACEMENT_OFFER_ACCEPTED' 
+ORDER BY audit_id DESC;
+
+
+
+--------------------------------------------------------------------------------
+SECTION 8: DML OPERATIONS (INSERT, UPDATE, DELETE)
+--------------------------------------------------------------------------------
+
+[QUERY 20] Update a Student's Phone Number:
+--------------------------------------------------------------------------------
+UPDATE students 
+SET phone = '9876500000' 
+WHERE student_id = 1;
+
+
+[QUERY 21] Update Job Status to Closed:
+--------------------------------------------------------------------------------
+UPDATE job_openings 
+SET job_status = 'CLOSED' 
+WHERE job_id = 5;
+
+================================================================================
+                        END OF SQL QUERIES LIST
+================================================================================

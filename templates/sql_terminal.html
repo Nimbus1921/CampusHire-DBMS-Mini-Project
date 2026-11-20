@@ -17,6 +17,9 @@
                     <button class="btn btn-sm btn-outline-secondary" onclick="clearQuery()">
                         <i class="fa-solid fa-eraser me-1"></i> Clear
                     </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="explainQueryPlan()" title="Analyze index scan & query optimizer execution plan">
+                        <i class="fa-solid fa-bolt me-1"></i> Explain Plan
+                    </button>
                     <button class="btn btn-primary-custom btn-sm" onclick="runQuery()">
                         <i class="fa-solid fa-play me-1"></i> Execute Query (Ctrl+Enter)
                     </button>
@@ -83,6 +86,17 @@ function clearQuery() {
     document.getElementById('sqlQueryInput').value = '';
     document.getElementById('queryOutputContainer').innerHTML = '<div class="text-center py-5 text-muted">Editor cleared.</div>';
     document.getElementById('queryMeta').innerHTML = '<span>Ready</span>';
+}
+
+function explainQueryPlan() {
+    const raw = document.getElementById('sqlQueryInput').value.trim();
+    if (!raw) {
+        alert('Please enter a query to explain.');
+        return;
+    }
+    const clean = raw.replace(/^EXPLAIN\s+QUERY\s+PLAN\s+/i, '');
+    document.getElementById('sqlQueryInput').value = 'EXPLAIN QUERY PLAN ' + clean;
+    runQuery();
 }
 
 function runQuery() {
