@@ -5,6 +5,7 @@ Stored Procedures, Views, Cursors, and Interactive SQL Terminal.
 """
 
 import os
+import sqlite3
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
 import database
