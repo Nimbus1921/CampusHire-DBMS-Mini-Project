@@ -53,26 +53,42 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    buffer = []
     while True:
         try:
-            query = input("SQL> ").strip()
-            if not query:
-                continue
-            if query.lower() in ('exit', 'quit', 'q'):
-                print("Exiting database console. Goodbye!")
-                break
-            if query.lower() == 'tables':
-                cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;")
-                tables = [r[0] for r in cur.fetchall()]
-                print("\nTables in Database:")
-                for t in tables:
-                    print(f"  • {t}")
-                print()
+            prompt = "SQL> " if not buffer else " ...> "
+            line = input(prompt)
+            stripped = line.strip()
+
+            if not buffer:
+                if not stripped:
+                    continue
+                if stripped.lower() in ('exit', 'quit', 'q'):
+                    print("Exiting database console. Goodbye!")
+                    break
+                if stripped.lower() == 'tables':
+                    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;")
+                    tables = [r[0] for r in cur.fetchall()]
+                    print("\nTables in Database:")
+                    for t in tables:
+                        print(f"  • {t}")
+                    print()
+                    continue
+                if stripped.lower() == 'clear':
+                    buffer = []
+                    continue
+
+            buffer.append(line)
+
+            # Check if query ends with a semicolon
+            full_query = " ".join(buffer).strip()
+            if not full_query.endswith(";"):
                 continue
 
-            # Execute query
-            cur.execute(query)
-            if query.strip().upper().startswith(("SELECT", "PRAGMA", "EXPLAIN")):
+            # Complete query encountered
+            buffer = []
+            cur.execute(full_query)
+            if full_query.strip().upper().startswith(("SELECT", "PRAGMA", "EXPLAIN", "WITH")):
                 rows = cur.fetchall()
                 print_table(cur, rows)
             else:
@@ -80,9 +96,14 @@ def main():
                 print(f"  Query executed successfully. ({cur.rowcount} row(s) affected)\n")
 
         except KeyboardInterrupt:
-            print("\nExiting database console.")
-            break
+            if buffer:
+                print("\n  (Query buffer cleared)")
+                buffer = []
+            else:
+                print("\nExiting database console.")
+                break
         except Exception as e:
+            buffer = []
             print(f"  SQL Error: {str(e)}\n")
 
     conn.close()
