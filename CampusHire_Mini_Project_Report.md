@@ -7,6 +7,8 @@
 
 <div align="center">
 
+<img src="report_images/dyp_logo.png" alt="DYPCOE Logo" width="160" style="margin-bottom: 15px;" />
+
 ### D. Y. PATIL COLLEGE OF ENGINEERING, AKURDI, PUNE – 44.
 *(An Autonomous Institute with effect from Academic Year 2024–25)*  
 **Affiliated to Savitribai Phule Pune University**
@@ -187,9 +189,17 @@ This project demonstrates the complete, end-to-end practical application of fund
 
 | Figure No. | Description | Page / Section |
 | :---: | :--- | :---: |
-| **Figure 1** | ER Diagram — CampusHire Entity-Relationship Model | Section 5.1 |
-| **Figure 2** | Relational Schema Architecture & Table Relationships | Section 5.2 |
+| **Figure 1** | ER Diagram & Relational Schema Architecture (11 Tables) | Section 5.1 |
+| **Figure 2** | Executive Analytics Dashboard & Live Placement Statistics | Section 1.3 |
 | **Figure 3** | Normalization Flow Pipeline — UNF to 3NF | Section 5.3 |
+| **Figure 4** | Student Dossier & Multi-Criteria Records Management Interface | Section 5.2 |
+| **Figure 5** | Campus Recruitment Drives & Corporate Partner Directory | Section 5.2 |
+| **Figure 6** | Multi-Stage Interview Round Evaluation & Scoring Console | Section 5.4 |
+| **Figure 7** | Placement Offers Management & Trigger Status Cascading | Section 5.4 |
+| **Figure 8** | Stored Procedures, Functions & Cursor Execution Console | Section 5.4.5 |
+| **Figure 9** | Interactive SQL Query Terminal with Explain Plan | Section 5.4.2 |
+| **Figure 10** | System Audit Trail & Trigger Execution History | Section 5.4.7 |
+| **Figure 11** | Direct SQLite Database CLI Terminal Session (Live Proof) | Section 5.4 |
 
 ---
 
@@ -242,6 +252,14 @@ The motivation arises from critical operational problems observed in college T&P
   - **Explicit Cursor:** Construct a cursor loop traversing interview round records to generate statistical summaries.
   - **Database Triggers:** Automate audit trails and status synchronization.
 - **Analytical Views:** Build high-performance views for instant dashboard reporting.
+
+
+<div align="center">
+
+![Figure 2: Executive Analytics Dashboard & Live Placement Statistics](report_images/fig2_dashboard_analytics.png)
+*Figure 2: Executive Analytics Dashboard & Live Placement Statistics (Real-Time Chart.js Visualizations)*
+
+</div>
 
 ### 1.4 Organization of Report
 - **Chapter 2 (Literature Survey):** Benchmarking existing placement management software and spreadsheets against CampusHire.
@@ -478,6 +496,18 @@ erDiagram
 
 ---
 
+<div align="center">
+
+![Figure 4: Student Dossier & Records Management](report_images/fig3_student_management.png)
+*Figure 4: Student Dossier & Multi-Criteria Records Management Interface*
+
+<br>
+
+![Figure 5: Campus Recruitment Drives](report_images/fig4_recruitment_drives.png)
+*Figure 5: Campus Recruitment Drives & Corporate Partner Directory*
+
+</div>
+
 #### Complete Data Dictionaries
 
 ##### Table 5: `users`
@@ -694,6 +724,18 @@ ALTER TABLE placement_offers
 
 ---
 
+<div align="center">
+
+![Figure 6: Multi-Stage Interview Round Evaluations](report_images/fig5_interview_evaluations.png)
+*Figure 6: Multi-Stage Interview Round Evaluation & Scoring Console*
+
+<br>
+
+![Figure 7: Placement Offers Management](report_images/fig6_placement_offers.png)
+*Figure 7: Placement Offers Management & Trigger Status Cascading*
+
+</div>
+
 #### 5.4.2 DML Operations & Complex Queries
 
 ##### Query 1: Multi-Table JOIN with Multi-Criteria Eligibility Verification
@@ -823,6 +865,13 @@ DELIMITER ;
 
 ---
 
+<div align="center">
+
+![Figure 8: Stored Procedures & Cursor Console](report_images/fig7_procedures_console.png)
+*Figure 8: Stored Procedures, Functions & Cursor Execution Console*
+
+</div>
+
 #### 5.4.6 Explicit Cursor Implementation
 Demonstrates complete 6-stage cursor lifecycle (`DECLARE`, `HANDLER`, `OPEN`, `LOOP/FETCH`, `PROCESS`, `CLOSE`):
 
@@ -945,6 +994,23 @@ DELIMITER ;
 ```
 
 ---
+
+<div align="center">
+
+![Figure 9: Interactive SQL Query Terminal](report_images/fig8_sql_terminal.png)
+*Figure 9: Interactive SQL Query Terminal with Execution Plan & Result Grid*
+
+<br>
+
+![Figure 10: System Audit Trail Logs](report_images/fig9_audit_trail.png)
+*Figure 10: System Audit Trail & Trigger Execution History*
+
+<br>
+
+![Figure 11: Direct Database Console Session](report_images/fig10_db_cli_terminal.png)
+*Figure 11: Direct SQLite Database CLI Terminal Session (Live Proof Execution)*
+
+</div>
 
 #### 5.4.8 Project File Structure [Table 12]
 | File / Directory | Module Purpose |
