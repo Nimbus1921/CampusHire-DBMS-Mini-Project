@@ -117,33 +117,37 @@ Advanced database constructs including Stored Functions, Stored Procedures, Curs
 
 # Table of Contents
 
-- **Abstract**
-- **Table of Contents**
-- **List of Abbreviations**
-- **List of Figures**
-- **List of Tables**
-- **Chapter 1 — Introduction**
-  - 1.1 Overview
-  - 1.2 Aim / Motivation
-  - 1.3 Objectives
-  - 1.4 Organization of Report
-- **Chapter 2 — Literature Survey**
-- **Chapter 3 — Problem Statement**
-  - 3.1 Background
-  - 3.2 The Problem (5 W's Analysis)
-  - 3.3 Proposed Solution
-- **Chapter 4 — Software Requirements Specification**
-  - 4.1 Hardware Requirements
-  - 4.2 Software Requirements
-- **Chapter 5 — System Design**
-  - 5.1 ER Diagram
-  - 5.2 Relational Schema
-  - 5.3 Normalization
-  - 5.4 Advanced Database Constructs
-- **Chapter 6 — Conclusion and Future Scope**
-  - 6.1 Conclusion
-  - 6.2 Future Scope
-- **References**
+| Section / Topic | Page No. |
+| :--- | :---: |
+| **Certificate** | **ii** |
+| **Acknowledgements** | **iii** |
+| **Abstract** | **iv** |
+| **Table of Contents** | **v** |
+| **List of Abbreviations** | **vi** |
+| **List of Figures** | **vii** |
+| **List of Tables** | **viii** |
+| **Chapter 1 — Introduction** | **1** |
+| &nbsp;&nbsp;&nbsp;&nbsp;1.1 Overview | 1 |
+| &nbsp;&nbsp;&nbsp;&nbsp;1.2 Aim / Motivation | 1 |
+| &nbsp;&nbsp;&nbsp;&nbsp;1.3 Objectives | 2 |
+| &nbsp;&nbsp;&nbsp;&nbsp;1.4 Organization of Report | 2 |
+| **Chapter 2 — Literature Survey** | **3** |
+| **Chapter 3 — Problem Statement** | **4** |
+| &nbsp;&nbsp;&nbsp;&nbsp;3.1 Background | 4 |
+| &nbsp;&nbsp;&nbsp;&nbsp;3.2 The Problem (5 W's Analysis) | 4 |
+| &nbsp;&nbsp;&nbsp;&nbsp;3.3 Proposed Solution | 5 |
+| **Chapter 4 — Software Requirements Specification** | **6** |
+| &nbsp;&nbsp;&nbsp;&nbsp;4.1 Hardware Requirements | 6 |
+| &nbsp;&nbsp;&nbsp;&nbsp;4.2 Software Requirements | 6 |
+| **Chapter 5 — System Design** | **7** |
+| &nbsp;&nbsp;&nbsp;&nbsp;5.1 ER Diagram | 7 |
+| &nbsp;&nbsp;&nbsp;&nbsp;5.2 Relational Schema & Data Dictionaries | 9 |
+| &nbsp;&nbsp;&nbsp;&nbsp;5.3 Normalization (UNF to 3NF) | 14 |
+| &nbsp;&nbsp;&nbsp;&nbsp;5.4 Advanced Database Constructs | 17 |
+| **Chapter 6 — Conclusion and Future Scope** | **23** |
+| &nbsp;&nbsp;&nbsp;&nbsp;6.1 Conclusion | 23 |
+| &nbsp;&nbsp;&nbsp;&nbsp;6.2 Future Scope | 24 |
+| **References** | **25** |
 
 ---
 <div style="page-break-after: always;"></div>
@@ -644,7 +648,8 @@ GROUP BY d.department_id, d.department_name;
 #### 5.4.4 Stored Function
 `fn_calculate_overall_placement_percentage()` — Computes the overall campus placement percentage:
 
-$$	ext{Placement } \% = \left(rac{	ext{Distinct students with } \ge 1 	ext{ ACCEPTED offer}}{	ext{Total registered active students}}ight) 	imes 100$$
+$$	ext{Placement } \% = \left(rac{	ext{Distinct students with } \ge 1 	ext{ ACCEPTED offer}}{	ext{Total registered active students}}
+ight) 	imes 100$$
 
 ```sql
 CREATE FUNCTION fn_calculate_overall_placement_percentage()
